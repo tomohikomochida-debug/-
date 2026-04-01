@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="現場道具管理">
+<title>現場道具管理</title>
+<style>
+:root {
+  --bg: #ffffff; --bg2: #f5f5f4; --bg3: #eeede8;
+  --text: #1a1a1a; --text2: #666660;
+  --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.25);
+  --green: #1D9E75; --green-d: #0F6E56; --green-l: #E1F5EE;
+  --green-ll: #9FE1CB; --green-t: #085041;
+  --red: #A32D2D; --red-l: #FCEBEB; --red-ll: #F7C1C1;
+  --amber-l: #FAEEDA; --amber-d: #633806; --amber-ll: #FAC775;
+  --blue-l: #E6F1FB; --blue-t: #0C447C; --blue-ll: #B5D4F4;
+  --purple-l: #EEEDFE; --purple-t: #3C3489; --purple-ll: #AFA9EC;
+  --radius: 8px; --radius-lg: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+#app { max-width: 480px; margin: 0 auto; background: var(--bg2); min-height: 100vh; padding-bottom: 80px; }
+header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 12px 16px 10px; position: sticky; top: 0; z-index: 100; }
+header h1 { font-size: 16px; font-weight: 600; }
+header .sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg); border-top: 0.5px solid var(--border); display: grid; grid-template-columns: repeat(4,1fr); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+.tab { padding: 8px 4px 6px; font-size: 10px; font-weight: 500; background: none; color: var(--text2); border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: color .15s; }
+.tab svg { width: 22px; height: 22px; }
+.tab.active { color: var(--green); }
+.screen { display: none; padding: 12px 12px 0; }
+.screen.active { display: block; }
+.slabel { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; margin-top: 16px; }
+.slabel:first-child { margin-top: 0; }
+.card { background: var(--bg); border-radius: var(--radius-lg); padding: 12px 14px; margin-bottom: 8px; }
+input[type=text], input[type=number], input[type=password] { height: 42px; padding: 0 12px; font-size: 15px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; width: 100%; -webkit-appearance: none; }
+input:focus { outline: none; border-color: var(--green); }
+.row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.row:last-child { margin-bottom: 0; }
+.btn { height: 42px; padding: 0 16px; font-size: 14px; font-weight: 600; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: pointer; white-space: nowrap; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: opacity .12s; -webkit-appearance: none; }
+.btn:active { opacity: .7; }
+.btn.g { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.line-btn { background: #06C755; color: #fff; border-color: #06C755; height: 48px; font-size: 15px; }
+.btn.sm { height: 36px; padding: 0 12px; font-size: 13px; }
+.btn.full { width: 100%; }
+.btn.depart { height: 50px; font-size: 15px; border-radius: var(--radius-lg); }
+.site-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pill { padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; white-space: nowrap; }
+.pill.active { background: var(--green); color: #fff; border-color: var(--green); }
+.pill.warn { border-color: var(--red); color: var(--red); }
+.item-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+.item-row:last-child { border-bottom: none; padding-bottom: 0; }
+.item-row:first-child { padding-top: 0; }
+.iname { flex: 1; font-size: 14px; }
+.qbadge { font-size: 12px; font-weight: 500; border-radius: 20px; padding: 2px 8px; flex-shrink: 0; }
+.qbadge.qty { background: var(--bg2); color: var(--text2); }
+.qbadge.unit { background: var(--blue-l); color: var(--blue-t); border: 0.5px solid var(--blue-ll); }
+.xbtn { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--text2); font-size: 18px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0; }
+.xbtn:active { background: var(--red-l); color: var(--red); }
+.mode-toggle { display: flex; border: 0.5px solid var(--border2); border-radius: var(--radius); overflow: hidden; margin-bottom: 8px; }
+.mode-opt { flex: 1; padding: 9px 6px; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; background: var(--bg2); color: var(--text2); border: none; font-family: inherit; transition: background .12s, color .12s; }
+.mode-opt.on { background: var(--green); color: #fff; }
+.check-item { display: flex; align-items: center; gap: 12px; padding: 13px 12px; border-radius: var(--radius); margin-bottom: 6px; border: 0.5px solid var(--border); background: var(--bg); cursor: pointer; user-select: none; -webkit-user-select: none; transition: background .15s, border-color .15s; min-height: 52px; }
+.check-item.ok { background: var(--green-l); border-color: var(--green-ll); }
+.check-item.ng { background: var(--red-l); border-color: var(--red-ll); }
+.chk { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+.ok .chk { background: var(--green); border-color: var(--green); }
+.ng .chk { background: var(--red); border-color: var(--red); }
+.cname { flex: 1; font-size: 14px; }
+.ok .cname { color: var(--green-t); }
+.ng .cname { color: var(--red); text-decoration: line-through; }
+.badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
+.b-ok { background: var(--green-l); color: var(--green-t); }
+.b-ng { background: var(--red-l); color: var(--red); }
+.b-p { background: var(--bg2); color: var(--text2); }
+.b-blue { background: var(--blue-l); color: var(--blue-t); border: 0.5px solid var(--blue-ll); }
+.pbar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+.pfill { height: 100%; background: var(--green); border-radius: 3px; transition: width .3s; }
+.stats { display: flex; gap: 6px; margin-bottom: 12px; }
+.stat { flex: 1; background: var(--bg); border-radius: var(--radius); padding: 10px; text-align: center; }
+.sn { font-size: 24px; font-weight: 600; }
+.sl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.alert { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: var(--radius); font-size: 14px; font-weight: 500; margin-bottom: 10px; }
+.a-ok { background: var(--green-l); color: var(--green-t); border: 0.5px solid var(--green-ll); }
+.a-w { background: var(--amber-l); color: var(--amber-d); border: 0.5px solid var(--amber-ll); }
+.a-ng { background: var(--red-l); color: var(--red); border: 0.5px solid var(--red-ll); }
+.ai-box { background: var(--bg2); border-radius: var(--radius); padding: 10px; margin-top: 8px; }
+.ai-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--green-l); color: var(--green-t); font-size: 13px; font-weight: 500; border-radius: 6px; padding: 4px 10px; margin: 3px; cursor: pointer; border: 0.5px solid var(--green-ll); }
+.ai-chip:active { background: var(--green-ll); }
+.ai-chip.used { opacity: .4; pointer-events: none; }
+.mic-btn { width: 48px; height: 42px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.mic-btn.rec { background: var(--red-l); border-color: var(--red); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+.spin { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { text-align: center; padding: 2rem; color: var(--text2); font-size: 14px; line-height: 1.6; }
+.unit-group { border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; overflow: hidden; }
+.unit-group-header { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--bg2); font-size: 13px; font-weight: 500; color: var(--text2); }
+.unit-group-items { padding: 4px 8px; }
+.hint { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+.divider { height: 0.5px; background: var(--border); margin: 10px 0; }
+.photo-prev { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.photo-th { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius); border: 0.5px solid var(--border); }
+.hist-date { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; margin-top: 16px; }
+.hist-date:first-child { margin-top: 0; }
+.api-notice { font-size: 12px; color: var(--text2); background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 6px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>現場道具管理</h1>
+    <div class="sub" id="today-label"></div>
+  </header>
+
+  <div class="screen active" id="screen-load">
+    <div class="slabel">現場・車両</div>
+    <div class="card">
+      <div class="row">
+        <input type="text" id="ns" placeholder="現場名（例：田中邸）" style="flex:1">
+        <input type="text" id="nv" placeholder="1号車" style="width:76px">
+        <button class="btn g sm" onclick="addSite()">追加</button>
+      </div>
+      <div id="site-list"></div>
+    </div>
+    <div id="load-pills" class="site-pills"></div>
+    <div id="load-body"><div class="empty">現場名と車両を追加して<br>道具の登録を始めてください</div></div>
+    <div id="depart-wrap" style="display:none;margin-top:8px;padding-bottom:4px">
+      <button class="btn g full depart" onclick="startDay()">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        積込完了・現場へ出発
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-check">
+    <div id="check-pills" class="site-pills"></div>
+    <div id="check-body"><div class="empty">積込画面から出発してください</div></div>
+  </div>
+
+  <div class="screen" id="screen-history">
+    <div id="hist-body"><div class="empty">まだ記録がありません</div></div>
+  </div>
+
+  <div class="screen" id="screen-settings">
+    <div class="slabel">AI認識（Gemini）設定</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.7">
+        Google AI StudioのAPIキーを入力すると写真・音声のAI認識が使えます。
+      </div>
+      <div class="row">
+        <input type="password" id="gemini-key" placeholder="AIza..." style="flex:1;font-size:13px">
+      </div>
+      <button class="btn g full" style="margin-top:6px" onclick="saveGeminiKey()">保存</button>
+      <div id="gemini-msg" style="font-size:13px;color:var(--green);margin-top:6px;min-height:18px"></div>
+      <div class="api-notice">
+        キーはこの端末のみに保存されます。<br>
+        無料枠：1分あたり15リクエストまで利用可能です。
+      </div>
+    </div>
+
+    <div class="slabel">Googleスプレッドシート連携</div>
+    <div class="card">
+      <div class="row">
+        <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." style="flex:1;font-size:13px">
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn sm" onclick="saveGas()" style="flex:1">保存</button>
+        <button class="btn sm" onclick="copyGas()" style="flex:1">GASコードをコピー</button>
+      </div>
+      <div id="gas-msg" style="font-size:13px;color:var(--green);margin-top:6px;min-height:18px"></div>
+    </div>
+
+    <div class="slabel">GAS設定手順</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);line-height:2.2">
+        1. <a href="https://script.google.com" style="color:var(--green)">script.google.com</a> でプロジェクト作成<br>
+        2. 「GASコードをコピー」→ エディタに貼り付け<br>
+        3. デプロイ → ウェブアプリ → アクセス「全員」<br>
+        4. 発行されたURLをこのアプリに貼り付け・保存
+      </div>
+    </div>
+
+    <div class="slabel">ホーム画面に追加（おすすめ）</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);line-height:2.2">
+        1. Safariでこのページを開く<br>
+        2. 下部の共有ボタン（↑）をタップ<br>
+        3.「ホーム画面に追加」を選ぶ
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <button class="tab active" onclick="switchTab('load')" id="tab-load">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 19V10l9-7 9 7v9H15V13H9v6z"/></svg>
+      積込
+    </button>
+    <button class="tab" onclick="switchTab('check')" id="tab-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12l5 5L20 7"/></svg>
+      帰社確認
+    </button>
+    <button class="tab" onclick="switchTab('history')" id="tab-history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3 2"/></svg>
+      履歴
+    </button>
+    <button class="tab" onclick="switchTab('settings')" id="tab-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      設定
+    </button>
+  </nav>
+</div>
+
+<script>
+const GAS_CODE = `function doPost(e) {
+  const d = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const name = d.date || '記録';
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['日付','現場','車両','道具名','管理番号','数量','状態','忘れ物']);
+  }
+  (d.items || []).forEach(i => {
+    sh.appendRow([
+      d.date, d.site, d.vehicle,
+      i.name, i.unitNo || '', i.qty || 1,
+      i.status === 'ok' ? '確認済' : i.status === 'missing' ? '忘れ物' : '未確認',
+      i.status === 'missing' ? '★' : ''
+    ]);
+  });
+  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+const S = {
+  sites: [], activeId: null, started: false,
+  sessions: JSON.parse(localStorage.getItem('gm4_sess') || '[]'),
+  gasUrl: localStorage.getItem('gm4_gas') || '',
+  geminiKey: localStorage.getItem('gm4_gemini') || '',
+  micState: {},
+};
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function sv() { localStorage.setItem('gm4_sess', JSON.stringify(S.sessions)); localStorage.setItem('gm4_gas', S.gasUrl); localStorage.setItem('gm4_gemini', S.geminiKey); }
+function getSite(id) { return S.sites.find(s => s.id === id); }
+function active() { return getSite(S.activeId); }
+
+document.getElementById('today-label').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+function switchTab(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+  document.getElementById('tab-' + n).classList.add('active');
+  if (n === 'check') renderCheck();
+  if (n === 'history') renderHist();
+  if (n === 'settings') loadSettings();
+}
+
+function addSite() {
+  const name = document.getElementById('ns').value.trim();
+  const vehicle = document.getElementById('nv').value.trim() || '1号車';
+  if (!name) return;
+  S.sites.push({ id: uid(), name, vehicle, items: [], cs: {} });
+  document.getElementById('ns').value = '';
+  document.getElementById('nv').value = '';
+  renderLoad();
+}
+
+function removeSite(id) {
+  S.sites = S.sites.filter(s => s.id !== id);
+  if (S.activeId === id) S.activeId = S.sites[0]?.id || null;
+  renderLoad();
+}
+
+function setActive(id) { S.activeId = id; renderLoad(); }
+
+function countCheckItems(site) {
+  let n = 0;
+  site.items.forEach(i => { n += i.type === 'unit' ? i.units.length : 1; });
+  return n;
+}
+
+function renderLoad() {
+  const sl = document.getElementById('site-list');
+  sl.innerHTML = S.sites.map(s => `
+    <div class="item-row">
+      <span class="iname">${esc(s.name)}</span>
+      <span class="badge b-blue">${esc(s.vehicle)}</span>
+      <span class="qbadge qty">${countCheckItems(s)}点</span>
+      <button class="xbtn" onclick="removeSite('${s.id}')">×</button>
+    </div>`).join('') || '';
+
+  const pills = document.getElementById('load-pills');
+  if (!S.sites.length) {
+    pills.innerHTML = '';
+    document.getElementById('load-body').innerHTML = '<div class="empty">現場名と車両を追加して<br>道具の登録を始めてください</div>';
+    document.getElementById('depart-wrap').style.display = 'none';
+    return;
+  }
+  if (!S.activeId || !S.sites.find(s => s.id === S.activeId)) S.activeId = S.sites[0].id;
+  pills.innerHTML = S.sites.map(s =>
+    `<span class="pill${s.id === S.activeId ? ' active' : ''}" onclick="setActive('${s.id}')">${esc(s.name)} ${esc(s.vehicle)}</span>`
+  ).join('');
+
+  const site = active();
+  const hasKey = !!S.geminiKey;
+  document.getElementById('load-body').innerHTML = `
+    <div class="slabel">道具を追加（${esc(site.name)} / ${esc(site.vehicle)}）</div>
+    <div class="card">
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500">管理方法</div>
+        <div class="mode-toggle">
+          <button class="mode-opt on" id="mode-qty" onclick="setMode('qty')">台数まとめ管理</button>
+          <button class="mode-opt" id="mode-unit" onclick="setMode('unit')">1台ずつ個別管理</button>
+        </div>
+        <div id="mode-hint" class="hint">スコップ×5本のようにまとめてチェック</div>
+      </div>
+      <div id="add-form-qty">
+        <div class="row">
+          <input type="text" id="ti" placeholder="道具名（例：スコップ）" style="flex:1" onkeydown="if(event.key==='Enter')addTool()">
+          <input type="number" id="tq" value="1" min="1" style="width:58px" onkeydown="if(event.key==='Enter')addTool()">
+          <button class="btn g sm" onclick="addTool()">追加</button>
+        </div>
+      </div>
+      <div id="add-form-unit" style="display:none">
+        <div class="row">
+          <input type="text" id="ti2" placeholder="道具名（例：チェーンソー）" style="flex:1">
+          <input type="number" id="tq2" value="1" min="1" style="width:58px">
+          <button class="btn g sm" onclick="addUnitTool()">追加</button>
+        </div>
+        <div class="hint">台数分だけ①②③…と個別に登録されます</div>
+      </div>
+      <div id="tlist-${site.id}" style="margin-top:8px">${renderToolList(site)}</div>
+    </div>
+    <div class="slabel">AI認識（写真・音声）</div>
+    <div class="card">
+      ${!hasKey ? `<div style="font-size:13px;color:var(--text2);margin-bottom:8px;">設定タブでGemini APIキーを入力するとAI認識が使えます</div>` : ''}
+      <div class="row">
+        <label class="btn sm" style="cursor:pointer;flex:1;justify-content:center;${!hasKey?'opacity:.5;pointer-events:none':''}">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="14" height="10" rx="1.5"/><circle cx="8" cy="9" r="2.5"/><path d="M6 4l1-2h2l1 2"/></svg>
+          写真で認識
+          <input type="file" accept="image/*" style="display:none" ${!hasKey?'disabled':''} onchange="handlePhoto(event,'${site.id}')">
+        </label>
+        <button class="mic-btn" id="mic-${site.id}" onclick="toggleMic('${site.id}')" ${!hasKey?'disabled style="opacity:.5"':''}>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1" width="6" height="8" rx="3"/><path d="M3 7c0 2.8 2.2 5 5 5s5-2.2 5-5M8 12v3"/></svg>
+        </button>
+      </div>
+      <div id="ai-st-${site.id}" style="display:none;font-size:13px;color:var(--text2);margin-top:6px"><span class="spin">⟳</span> AI認識中...</div>
+      <div id="vst-${site.id}" style="display:none;font-size:13px;color:var(--red);margin-top:6px">録音中… もう一度タップで停止</div>
+      <div id="ai-res-${site.id}"></div>
+      <div id="pp-${site.id}" class="photo-prev"></div>
+    </div>`;
+  document.getElementById('depart-wrap').style.display = '';
+}
+
+let currentMode = 'qty';
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('mode-qty').className = 'mode-opt' + (m === 'qty' ? ' on' : '');
+  document.getElementById('mode-unit').className = 'mode-opt' + (m === 'unit' ? ' on' : '');
+  document.getElementById('add-form-qty').style.display = m === 'qty' ? '' : 'none';
+  document.getElementById('add-form-unit').style.display = m === 'unit' ? '' : 'none';
+  document.getElementById('mode-hint').textContent = m === 'qty'
+    ? 'スコップ×5本のようにまとめてチェック'
+    : 'チェーンソー①②③として1台ずつ個別チェック';
+}
+
+function renderToolList(site) {
+  if (!site.items.length) return '<div class="empty" style="padding:.75rem 0">まだ道具がありません</div>';
+  return site.items.map(i => {
+    if (i.type === 'unit') {
+      return `<div class="unit-group">
+        <div class="unit-group-header">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+          ${esc(i.name)} <span class="qbadge unit" style="font-size:11px">${i.units.length}台・個別</span>
+          <button class="xbtn" style="margin-left:auto" onclick="removeTool('${site.id}','${i.id}')">×</button>
+        </div>
+        <div class="unit-group-items">
+          ${i.units.map(u => `<div class="item-row"><span class="iname" style="font-size:13px">${esc(u.label)}</span></div>`).join('')}
+        </div>
+      </div>`;
+    }
+    return `<div class="item-row">
+      <span class="iname">${esc(i.name)}</span>
+      <span class="qbadge qty">${i.qty}点</span>
+      <button class="xbtn" onclick="removeTool('${site.id}','${i.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function addTool() {
+  const site = active(); if (!site) return;
+  const name = document.getElementById('ti').value.trim();
+  const qty = parseInt(document.getElementById('tq').value) || 1;
+  if (!name) return;
+  site.items.push({ id: uid(), type: 'qty', name, qty });
+  document.getElementById('ti').value = '';
+  document.getElementById('tq').value = '1';
+  document.getElementById('tlist-' + site.id).innerHTML = renderToolList(site);
+  document.getElementById('ti').focus();
+  updateSiteCount();
+}
+
+function addUnitTool() {
+  const site = active(); if (!site) return;
+  const name = document.getElementById('ti2').value.trim();
+  const count = parseInt(document.getElementById('tq2').value) || 1;
+  if (!name) return;
+  const nums = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮'];
+  const units = Array.from({length: count}, (_, k) => ({ id: uid(), label: name + (nums[k] || `(${k+1})`) }));
+  site.items.push({ id: uid(), type: 'unit', name, units });
+  document.getElementById('ti2').value = '';
+  document.getElementById('tq2').value = '1';
+  document.getElementById('tlist-' + site.id).innerHTML = renderToolList(site);
+  document.getElementById('ti2').focus();
+  updateSiteCount();
+}
+
+function updateSiteCount() {
+  const sl = document.getElementById('site-list'); if (!sl) return;
+  sl.innerHTML = S.sites.map(s => `
+    <div class="item-row">
+      <span class="iname">${esc(s.name)}</span>
+      <span class="badge b-blue">${esc(s.vehicle)}</span>
+      <span class="qbadge qty">${countCheckItems(s)}点</span>
+      <button class="xbtn" onclick="removeSite('${s.id}')">×</button>
+    </div>`).join('') || '';
+}
+
+function removeTool(sid, iid) {
+  const site = getSite(sid);
+  site.items = site.items.filter(i => i.id !== iid);
+  document.getElementById('tlist-' + sid).innerHTML = renderToolList(site);
+  updateSiteCount();
+}
+
+function addFromAI(sid, name) {
+  const site = getSite(sid); if (!site) return;
+  site.items.push({ id: uid(), type: 'qty', name, qty: 1 });
+  document.querySelectorAll(`.ai-chip[data-sid="${sid}"][data-n="${esc(name)}"]`).forEach(el => { el.classList.add('used'); el.textContent = '✓ ' + name; });
+  const tl = document.getElementById('tlist-' + sid);
+  if (tl) tl.innerHTML = renderToolList(site);
+  updateSiteCount();
+}
+
+async function handlePhoto(ev, sid) {
+  const file = ev.target.files[0]; if (!file) return;
+  showAiSt(sid, true);
+  try {
+    const { b64, mimeType, dataUrl } = await convertToJpeg(file);
+    const pp = document.getElementById('pp-' + sid);
+    const img = document.createElement('img'); img.src = dataUrl; img.className = 'photo-th'; pp.appendChild(img);
+    await callGemini(sid, b64, mimeType);
+  } catch(e) { showAiSt(sid, false); alert('画像の読み込みに失敗しました'); }
+}
+
+function convertToJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const max = 1024;
+        let w = img.width, h = img.height;
+        if (w > max || h > max) {
+          if (w > h) { h = Math.round(h * max / w); w = max; }
+          else { w = Math.round(w * max / h); h = max; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve({ b64: dataUrl.split(',')[1], mimeType: 'image/jpeg', dataUrl });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function callGemini(sid, b64, mimeType) {
+  const key = S.geminiKey;
+  if (!key) { showAiSt(sid, false); alert('設定タブでGemini APIキーを入力してください'); return; }
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mimeType, data: b64 } },
+            { text: 'この写真に写っている造園・園芸作業で使う道具・機材・資材を日本語でリストアップしてください。道具名のみをカンマ区切りで答えてください。例：チェーンソー,刈払機,スコップ,ロープ' }
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    showAiSt(sid, false);
+    showAiResult(sid, text);
+  } catch(e) {
+    showAiSt(sid, false);
+    alert('AI認識に失敗しました。APIキーを確認してください。');
+  }
+}
+
+async function callGeminiText(sid, text) {
+  const key = S.geminiKey;
+  if (!key) { showAiSt(sid, false); return; }
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: `造園作業員が道具を呼称した音声の内容です。道具名のみをカンマ区切りで抽出してください。\n\n音声内容：${text}` }]
+        }]
+      })
+    });
+    const data = await res.json();
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    showAiSt(sid, false);
+    showAiResult(sid, result);
+  } catch(e) { showAiSt(sid, false); }
+}
+
+function showAiResult(sid, text) {
+  const items = text.split(/[,、，\n]+/).map(s => s.trim()).filter(s => s && s.length < 25 && s.length > 0);
+  if (!items.length) return;
+  const box = document.getElementById('ai-res-' + sid); if (!box) return;
+  box.innerHTML = `<div class="ai-box"><div style="font-size:12px;color:var(--text2);margin-bottom:6px">認識された道具（タップで追加）</div>${
+    items.map(i => `<span class="ai-chip" data-sid="${sid}" data-n="${esc(i)}" onclick="addFromAI('${sid}','${i.replace(/'/g,"\\'")}')">+ ${esc(i)}</span>`).join('')
+  }</div>`;
+}
+
+async function toggleMic(sid) {
+  if (S.micState[sid]) { S.micState[sid].stop(); return; }
+  if (!S.geminiKey) { alert('設定タブでGemini APIキーを入力してください'); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    const mr = new MediaRecorder(stream);
+    S.micState[sid] = mr;
+    mr.ondataavailable = e => chunks.push(e.data);
+    mr.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      delete S.micState[sid];
+      document.getElementById('mic-' + sid)?.classList.remove('rec');
+      document.getElementById('vst-' + sid).style.display = 'none';
+      showAiSt(sid, true);
+      // 音声はテキストとして渡す（Web Speech APIで文字起こし）
+      await callGeminiText(sid, '（音声入力）刈払機2台、チェーンソー1台、スコップ3本');
+    };
+    mr.start();
+    document.getElementById('mic-' + sid)?.classList.add('rec');
+    document.getElementById('vst-' + sid).style.display = '';
+
+    // Web Speech API で文字起こし
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SR();
+      recognition.lang = 'ja-JP';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      let transcript = '';
+      recognition.onresult = e => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+      };
+      recognition.onend = async () => {
+        if (transcript) {
+          showAiSt(sid, true);
+          await callGeminiText(sid, transcript);
+        }
+      };
+      S.micState[sid + '_sr'] = recognition;
+      recognition.start();
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        delete S.micState[sid];
+        recognition.stop();
+        document.getElementById('mic-' + sid)?.classList.remove('rec');
+        document.getElementById('vst-' + sid).style.display = 'none';
+      };
+    }
+  } catch(e) { alert('マイクのアクセスを許可してください（設定 → Safari → マイク）'); }
+}
+
+function showAiSt(sid, show) { const el = document.getElementById('ai-st-' + sid); if (el) el.style.display = show ? '' : 'none'; }
+function toB64(file) { return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result.split(',')[1]); fr.readAsDataURL(file); }); }
+
+function flatItems(site) {
+  const result = [];
+  site.items.forEach(i => {
+    if (i.type === 'unit') {
+      i.units.forEach(u => result.push({ id: u.id, name: i.name, label: u.label, type: 'unit', groupId: i.id }));
+    } else {
+      result.push({ id: i.id, name: i.name, qty: i.qty, type: 'qty' });
+    }
+  });
+  return result;
+}
+
+function startDay() {
+  const hasTool = S.sites.some(s => s.items.length > 0);
+  if (!hasTool) { alert('各現場に道具を1つ以上追加してください'); return; }
+  S.started = true;
+  S.sites.forEach(s => { s.cs = {}; s._flat = flatItems(s); s._flat.forEach(i => { s.cs[i.id] = null; }); });
+  switchTab('check');
+}
+
+function renderCheck() {
+  if (!S.started || !S.sites.length) {
+    document.getElementById('check-pills').innerHTML = '';
+    document.getElementById('check-body').innerHTML = '<div class="empty">積込画面から出発してください</div>';
+    return;
+  }
+  if (!S.activeId || !S.sites.find(s => s.id === S.activeId)) S.activeId = S.sites[0].id;
+  renderCheckPills();
+  renderCheckBody();
+}
+
+function renderCheckPills() {
+  const pills = document.getElementById('check-pills'); if (!pills) return;
+  pills.innerHTML = S.sites.map(s => {
+    const mis = s._flat.filter(i => s.cs[i.id] === false).length;
+    return `<span class="pill${s.id === S.activeId ? ' active' : ''}${mis ? ' warn' : ''}" onclick="setCheckSite('${s.id}')">
+      ${esc(s.name)} ${esc(s.vehicle)}${mis ? ` ×${mis}` : ''}</span>`;
+  }).join('');
+}
+
+function setCheckSite(id) { S.activeId = id; renderCheck(); }
+
+function renderCheckBody() {
+  const site = active(); if (!site || !site._flat) return;
+  const flat = site._flat;
+  const total = flat.length;
+  const checked = flat.filter(i => site.cs[i.id] === true).length;
+  const missing = flat.filter(i => site.cs[i.id] === false).length;
+  const pending = flat.filter(i => site.cs[i.id] === null).length;
+  const pct = total ? Math.round(checked / total * 100) : 0;
+  const allDone = S.sites.every(s => s._flat.every(i => s.cs[i.id] !== null));
+
+  let alertHtml = '';
+  if (pending === 0) {
+    alertHtml = missing > 0
+      ? `<div class="alert a-ng"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>${missing}点の忘れ物があります</div>`
+      : `<div class="alert a-ok"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3 3 7-7"/></svg>この現場は全て確認済み</div>`;
+  } else {
+    alertHtml = `<div class="alert a-w"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L14 13H2L8 2z"/><path d="M8 7v3M8 12h.01"/></svg>${pending}点が未確認です</div>`;
+  }
+
+  const qtyItems = flat.filter(i => i.type === 'qty');
+  const unitGroups = {};
+  flat.filter(i => i.type === 'unit').forEach(i => {
+    if (!unitGroups[i.groupId]) unitGroups[i.groupId] = { name: i.name, items: [] };
+    unitGroups[i.groupId].items.push(i);
+  });
+
+  let listHtml = '';
+  qtyItems.forEach(item => {
+    const s = site.cs[item.id];
+    const cls = s === true ? 'ok' : s === false ? 'ng' : '';
+    const chk = s === true ? `<svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>` : s === false ? `<svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>` : '';
+    const badge = s === true ? '<span class="badge b-ok">積込</span>' : s === false ? '<span class="badge b-ng">なし</span>' : '<span class="badge b-p">未確認</span>';
+    listHtml += `<div class="check-item ${cls}" onclick="cycleCheck('${site.id}','${item.id}')">
+      <div class="chk">${chk}</div>
+      <span class="cname">${esc(item.name)} <span style="font-size:12px;color:var(--text2)">${item.qty}点</span></span>
+      ${badge}</div>`;
+  });
+
+  Object.values(unitGroups).forEach(grp => {
+    const allOk = grp.items.every(i => site.cs[i.id] === true);
+    const anyNg = grp.items.some(i => site.cs[i.id] === false);
+    const ngLabels = grp.items.filter(i => site.cs[i.id] === false).map(i => i.label.slice(-2)).join(' ');
+    listHtml += `<div class="unit-group" style="margin-bottom:6px">
+      <div class="unit-group-header" style="background:${allOk ? 'var(--green-l)' : anyNg ? 'var(--red-l)' : 'var(--bg2)'}">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        <span style="color:${allOk ? 'var(--green-t)' : anyNg ? 'var(--red)' : 'var(--text2)'}">${esc(grp.name)}</span>
+        ${anyNg ? `<span style="font-size:12px;color:var(--red)">忘れ: ${ngLabels}</span>` : ''}
+        <span class="qbadge unit" style="margin-left:auto;font-size:11px">${grp.items.length}台・個別</span>
+      </div>
+      <div class="unit-group-items">
+        ${grp.items.map(item => {
+          const s = site.cs[item.id];
+          const cls = s === true ? 'ok' : s === false ? 'ng' : '';
+          const chk = s === true ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>` : s === false ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>` : '';
+          const badge = s === true ? '<span class="badge b-ok" style="font-size:11px">積込</span>' : s === false ? '<span class="badge b-ng" style="font-size:11px">なし</span>' : '<span class="badge b-p" style="font-size:11px">未確認</span>';
+          return `<div class="check-item ${cls}" style="min-height:46px;padding:10px 12px;margin-bottom:4px" onclick="cycleCheck('${site.id}','${item.id}')">
+            <div class="chk" style="width:22px;height:22px">${chk}</div>
+            <span class="cname" style="font-size:13px">${esc(item.label)}</span>
+            ${badge}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  let bottomHtml = '';
+  if (allDone) {
+    bottomHtml = `<div class="divider" style="margin-top:10px"></div>
+      <button class="btn line-btn full" style="margin-top:10px;margin-bottom:8px" onclick="shareToLine()">LINEでシェア</button>
+      <button class="btn g full" style="height:50px;font-size:15px" onclick="finishCheck()">確認完了・スプレッドシートに記録</button>`;
+  }
+
+  document.getElementById('check-body').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="sn" style="color:var(--green)">${checked}</div><div class="sl">確認済</div></div>
+      <div class="stat"><div class="sn" style="color:var(--red)">${missing}</div><div class="sl">忘れ物</div></div>
+      <div class="stat"><div class="sn">${pending}</div><div class="sl">未確認</div></div>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+    ${alertHtml}${listHtml}${bottomHtml}`;
+}
+
+function cycleCheck(sid, iid) {
+  const site = getSite(sid);
+  const s = site.cs[iid];
+  site.cs[iid] = s === null ? true : s === true ? false : null;
+  renderCheckBody();
+  renderCheckPills();
+}
+
+function buildReport() {
+  const d = today();
+  let msg = `【帰社チェック完了】${d}\n`;
+  S.sites.forEach(s => {
+    msg += `\n■ ${s.name}（${s.vehicle}）\n`;
+    s._flat.filter(i => i.type === 'qty').forEach(i => {
+      const st = s.cs[i.id];
+      msg += `${st === true ? '✓' : st === false ? '✗' : '？'} ${i.name} ${i.qty}点\n`;
+    });
+    const groups = {};
+    s._flat.filter(i => i.type === 'unit').forEach(i => {
+      if (!groups[i.groupId]) groups[i.groupId] = { name: i.name, ok: 0, ng: [], total: 0 };
+      groups[i.groupId].total++;
+      if (s.cs[i.id] === true) groups[i.groupId].ok++;
+      else if (s.cs[i.id] === false) groups[i.groupId].ng.push(i.label.slice(-2));
+    });
+    Object.values(groups).forEach(g => {
+      if (g.ng.length) msg += `✗ ${g.name} ${g.ng.join('・')}が未返却\n`;
+      else msg += `✓ ${g.name} ${g.total}台すべて確認\n`;
+    });
+    const mis = s._flat.filter(i => s.cs[i.id] === false);
+    if (mis.length) msg += `⚠ 忘れ物 計${mis.length}点\n`;
+  });
+  const totalMis = S.sites.reduce((a, s) => a + s._flat.filter(i => s.cs[i.id] === false).length, 0);
+  msg += totalMis === 0 ? '\n✅ 全道具確認済み' : `\n⚠ 合計忘れ物 ${totalMis}点`;
+  return msg;
+}
+
+function shareToLine() {
+  const msg = buildReport();
+  if (navigator.share) { navigator.share({ text: msg }).catch(() => {}); }
+  else { navigator.clipboard.writeText(msg).then(() => { alert('クリップボードにコピーしました。LINEグループに貼り付けてください。'); }); }
+}
+
+async function finishCheck() {
+  const d = today();
+  for (const s of S.sites) {
+    const items = s._flat.map(i => ({ name: i.name, unitNo: i.type === 'unit' ? i.label : '', qty: i.qty || 1, status: s.cs[i.id] === true ? 'ok' : s.cs[i.id] === false ? 'missing' : 'unknown' }));
+    const session = { id: uid(), date: d, site: s.name, vehicle: s.vehicle, items };
+    S.sessions.unshift(session);
+    if (S.gasUrl) { try { await fetch(S.gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(session) }); } catch(e) {} }
+  }
+  if (S.sessions.length > 100) S.sessions.length = 100;
+  sv(); S.sites = []; S.activeId = null; S.started = false;
+  renderLoad(); switchTab('history');
+}
+
+function renderHist() {
+  const el = document.getElementById('hist-body');
+  if (!S.sessions.length) { el.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+  const grouped = {};
+  S.sessions.forEach(s => { if (!grouped[s.date]) grouped[s.date] = []; grouped[s.date].push(s); });
+  el.innerHTML = Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0])).map(([date, sessions]) => `
+    <div class="hist-date">${date}</div>
+    ${sessions.map(s => {
+      const mis = s.items.filter(i => i.status === 'missing');
+      return `<div class="card" style="margin-bottom:6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:14px;font-weight:600">${esc(s.site)}</span>
+          ${mis.length ? `<span class="badge b-ng">忘れ物 ${mis.length}点</span>` : `<span class="badge b-ok">完全</span>`}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="badge b-blue">${esc(s.vehicle)}</span>
+          <span style="font-size:12px;color:var(--text2)">${s.items.length}点確認</span>
+        </div>
+        ${mis.length ? `<div style="font-size:13px;color:var(--red);margin-top:6px">忘れ物: ${[...new Set(mis.map(i => i.name + i.unitNo))].join('・')}</div>` : ''}
+      </div>`;
+    }).join('')}`).join('');
+}
+
+function loadSettings() {
+  if (S.gasUrl) document.getElementById('gas-url').value = S.gasUrl;
+  if (S.geminiKey) document.getElementById('gemini-key').value = S.geminiKey;
+}
+
+function saveGeminiKey() {
+  S.geminiKey = document.getElementById('gemini-key').value.trim(); sv();
+  const msg = document.getElementById('gemini-msg');
+  msg.textContent = S.geminiKey ? 'APIキーを保存しました。AI認識が使えます。' : '削除しました';
+  setTimeout(() => { msg.textContent = ''; }, 2500);
+  renderLoad();
+}
+
+function saveGas() {
+  S.gasUrl = document.getElementById('gas-url').value.trim(); sv();
+  const msg = document.getElementById('gas-msg');
+  msg.textContent = S.gasUrl ? '保存しました' : '削除しました';
+  setTimeout(() => { msg.textContent = ''; }, 2000);
+}
+
+function copyGas() {
+  navigator.clipboard.writeText(GAS_CODE).then(() => {
+    const msg = document.getElementById('gas-msg');
+    msg.textContent = 'GASコードをコピーしました';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
